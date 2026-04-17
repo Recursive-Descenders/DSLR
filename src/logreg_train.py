@@ -1,7 +1,5 @@
 import json, os, sys
 import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
 import csv
 
 
@@ -59,8 +57,8 @@ def load_xy(csv_path):
                     continue
                     
     except Exception as e:
-        print(f"Error: cannot read {csv_path}: {e}")
-        exit(0)
+        print(f"Error: cannot read {csv_path}: {e}", file=sys.stderr)
+        sys.exit(1)
     
     xs_array = np.array(xs, dtype=float)
     ys_dict = {
@@ -116,8 +114,11 @@ def logistic_regression(x, y, alpha=0.01, epochs=5000):
     return theta
 
 def main():
-    csv_file = "dataset_train.csv"
+    csv_file = sys.argv[1] if len(sys.argv) > 1 else "dataset_train.csv"
     xs_array, ys_dict = load_xy(csv_file)
+    if xs_array.size == 0 or xs_array.ndim != 2 or xs_array.shape[0] == 0:
+        print("Error: no valid training samples after loading.", file=sys.stderr)
+        sys.exit(1)
     standard_xs_array, mu, sigma = standardize(xs_array)
     n_params = standard_xs_array.shape[1] + 1  # bias + feature weights
     theta = {
