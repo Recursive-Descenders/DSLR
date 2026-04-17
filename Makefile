@@ -18,7 +18,7 @@ train:
 	@$(PY) src/logreg_train.py $(filter-out $@,$(MAKECMDGOALS))
 
 predict: 
-	$(PY) src/predict.py
+	$(PY) src/logreg_predict.py $(filter-out $@,$(MAKECMDGOALS))
 
 evaluate: 
 	@$(PY) src/evaluate.py $(filter-out $@,$(MAKECMDGOALS))

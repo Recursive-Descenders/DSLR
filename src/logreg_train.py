@@ -4,114 +4,99 @@ import csv
 
 
 def load_xy(csv_path):
+    """Load training CSV into X and per-house binary labels (one-vs-all). Missing values as NaN."""
     xs = []
     ys_gryffindor = []
     ys_hufflepuff = []
     ys_ravenclaw = []
     ys_slytherin = []
-    
+
     try:
         with open(csv_path, "r") as f:
             reader = csv.reader(f)
-            header = next(reader)  # Skip header
-            
+            next(reader)
+
             for row in reader:
                 if not row or len(row) < 19:
                     continue
-                
+
                 try:
-                    # Extract Hogwarts House (column 1)
                     house = row[1].strip()
                     if not house:
                         continue
-                    
-                    # Extract Best Hand (column 5) and convert to binary
-                    best_hand = row[5].strip()
-                    if not best_hand:
-                        continue
-                    best_hand_binary = 1 if best_hand == "Right" else 0
-                    
-                    # Extract numeric features (columns 6-18)
-                    x_row = [best_hand_binary]  # Start with Best Hand
-                    has_nan = False
-                    for i in range(6, 19):  # Columns 6 to 18
-                        val = row[i].strip()
-                        if val == "":
-                            has_nan = True
-                            break
-                        x_row.append(float(val))
-                    
-                    # Skip this row if it contains NaN
-                    if has_nan:
-                        continue
-                    
+
+                    bh = row[5].strip()
+                    best_hand_val = np.nan if not bh else (1.0 if bh == "Right" else 0.0)
+
+                    x_row = [best_hand_val]
+                    for i in range(6, 19):
+                        v = row[i].strip()
+                        x_row.append(np.nan if v == "" else float(v))
+
                     xs.append(x_row)
-                    
-                    # Create one-vs-all binary labels for each house
+
                     ys_gryffindor.append(1 if house == "Gryffindor" else 0)
                     ys_hufflepuff.append(1 if house == "Hufflepuff" else 0)
                     ys_ravenclaw.append(1 if house == "Ravenclaw" else 0)
                     ys_slytherin.append(1 if house == "Slytherin" else 0)
-                    
-                except (ValueError, IndexError) as e:
+
+                except (ValueError, IndexError):
                     continue
-                    
+
     except Exception as e:
         print(f"Error: cannot read {csv_path}: {e}", file=sys.stderr)
         sys.exit(1)
-    
-    xs_array = np.array(xs, dtype=float)
+
+    xs_array = np.asarray(xs, dtype=float)
     ys_dict = {
         "Gryffindor": np.array(ys_gryffindor, dtype=int),
         "Hufflepuff": np.array(ys_hufflepuff, dtype=int),
         "Ravenclaw": np.array(ys_ravenclaw, dtype=int),
-        "Slytherin": np.array(ys_slytherin, dtype=int)
+        "Slytherin": np.array(ys_slytherin, dtype=int),
     }
-    
+
     return xs_array, ys_dict
 
 
+def column_medians_for_imputation(x):
+    """Training-only column medians (nanmedian); all-NaN columns become 0."""
+    med = np.nanmedian(x, axis=0)
+    return np.where(np.isnan(med), 0.0, med)
+
+
+def apply_median_imputation(x, medians):
+    x = np.asarray(x, dtype=float).copy()
+    m = np.asarray(medians, dtype=float)
+    for j in range(x.shape[1]):
+        col = x[:, j]
+        col[np.isnan(col)] = m[j]
+    return x
+
+
 def standardize(x):
-    """Standardize each feature column independently"""
     mu = np.mean(x, axis=0)
     sigma = np.std(x, axis=0)
-    # Avoid division by zero
     sigma = np.where(sigma < 1e-12, 1.0, sigma)
-    x_scaled = (x - mu) / sigma
-    return x_scaled, mu, sigma
-
+    return (x - mu) / sigma, mu, sigma
 
 
 def logistic_regression(x, y, alpha=0.01, epochs=5000):
-    """Logistic regression with bias term"""
-    # Add bias term (column of ones) to features
+    """Binary logistic regression; theta[0] is bias, gradient descent matches subject annex."""
     ones = np.ones((x.shape[0], 1))
-    x_with_bias = np.hstack([ones, x])
-    
-    # Initialize theta (including bias term)
-    theta = np.random.randn(x_with_bias.shape[1]) * 0.01
-    
+    xb = np.hstack([ones, x])
+    theta = np.random.randn(xb.shape[1]) * 0.01
+
     for epoch in range(epochs):
-        # Calculate hypothesis using sigmoid
-        z = x_with_bias.dot(theta)
-        # Clip z to prevent overflow
-        z_clipped = np.clip(z, -500, 500)
-        h = 1 / (1 + np.exp(-z_clipped))
-        
-        # Calculate gradient
-        gradient = x_with_bias.T.dot(h - y) / len(y)
-        
-        # Update theta
-        theta -= alpha * gradient
-        
-        # Optional: print progress every 1000 epochs
+        z = np.clip(xb.dot(theta), -500, 500)
+        h = 1 / (1 + np.exp(-z))
+        theta -= alpha * xb.T.dot(h - y) / len(y)
+
         if (epoch + 1) % 1000 == 0:
-            # Calculate current accuracy for monitoring
-            predictions = (h > 0.5).astype(int)
-            accuracy = np.mean(predictions == y) * 100
-            print(f"Epoch {epoch + 1}/{epochs}, Accuracy: {accuracy:.2f}%")
-    
+            acc = np.mean(((h > 0.5).astype(int) == y)) * 100
+            print(f"Epoch {epoch + 1}/{epochs}, Accuracy: {acc:.2f}%")
+
     return theta
+
 
 def main():
     csv_file = sys.argv[1] if len(sys.argv) > 1 else "dataset_train.csv"
@@ -119,24 +104,29 @@ def main():
     if xs_array.size == 0 or xs_array.ndim != 2 or xs_array.shape[0] == 0:
         print("Error: no valid training samples after loading.", file=sys.stderr)
         sys.exit(1)
-    standard_xs_array, mu, sigma = standardize(xs_array)
-    n_params = standard_xs_array.shape[1] + 1  # bias + feature weights
-    theta = {
-        "Gryffindor": [0.0] * n_params,
-        "Hufflepuff": [0.0] * n_params,
-        "Ravenclaw": [0.0] * n_params,
-        "Slytherin": [0.0] * n_params,
-    }
+
+    medians = column_medians_for_imputation(xs_array)
+    xs_imputed = apply_median_imputation(xs_array, medians)
+    standard_xs_array, mu, sigma = standardize(xs_imputed)
+
+    n_params = standard_xs_array.shape[1] + 1
+    theta = {h: [0.0] * n_params for h in ("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin")}
     for house in theta:
         theta[house] = logistic_regression(standard_xs_array, ys_dict[house]).tolist()
+
     os.makedirs("model", exist_ok=True)
     with open("model/model.json", "w") as f:
-        json.dump({
-            "theta": theta,
-            "mu": mu.tolist() if isinstance(mu, np.ndarray) else mu,
-            "sigma": sigma.tolist() if isinstance(sigma, np.ndarray) else sigma
-        }, f, indent=2)
-    print(f"Training complete. Model saved to model/model.json")
+        json.dump(
+            {
+                "theta": theta,
+                "mu": mu.tolist() if isinstance(mu, np.ndarray) else mu,
+                "sigma": sigma.tolist() if isinstance(sigma, np.ndarray) else sigma,
+                "medians": medians.tolist() if isinstance(medians, np.ndarray) else medians,
+            },
+            f,
+            indent=2,
+        )
+    print("Training complete. Model saved to model/model.json")
     print(f"Theta lengths per house: { {h: len(theta[h]) for h in theta} }, Mu length: {len(mu)}, Sigma length: {len(sigma)}")
 
 
