@@ -119,16 +119,24 @@ def main():
     csv_file = "dataset_train.csv"
     xs_array, ys_dict = load_xy(csv_file)
     standard_xs_array, mu, sigma = standardize(xs_array)
-    theta = logistic_regression(standard_xs_array, ys_dict["Ravenclaw"])
+    n_params = standard_xs_array.shape[1] + 1  # bias + feature weights
+    theta = {
+        "Gryffindor": [0.0] * n_params,
+        "Hufflepuff": [0.0] * n_params,
+        "Ravenclaw": [0.0] * n_params,
+        "Slytherin": [0.0] * n_params,
+    }
+    for house in theta:
+        theta[house] = logistic_regression(standard_xs_array, ys_dict[house]).tolist()
     os.makedirs("model", exist_ok=True)
     with open("model/model.json", "w") as f:
         json.dump({
-            "theta": theta.tolist(),
+            "theta": theta,
             "mu": mu.tolist() if isinstance(mu, np.ndarray) else mu,
             "sigma": sigma.tolist() if isinstance(sigma, np.ndarray) else sigma
-        }, f)
+        }, f, indent=2)
     print(f"Training complete. Model saved to model/model.json")
-    print(f"Theta shape: {theta.shape}, Mu shape: {mu.shape}, Sigma shape: {sigma.shape}")
+    print(f"Theta lengths per house: { {h: len(theta[h]) for h in theta} }, Mu shape: {mu.shape}, Sigma shape: {sigma.shape}")
 
 
 if __name__ == "__main__":
