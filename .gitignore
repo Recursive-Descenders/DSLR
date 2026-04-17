@@ -1,4 +1,4 @@
 .venv
 en.subject.pdf
 subject.txt
-model/
+model/*

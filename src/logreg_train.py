@@ -137,7 +137,7 @@ def main():
             "sigma": sigma.tolist() if isinstance(sigma, np.ndarray) else sigma
         }, f, indent=2)
     print(f"Training complete. Model saved to model/model.json")
-    print(f"Theta lengths per house: { {h: len(theta[h]) for h in theta} }, Mu shape: {mu.shape}, Sigma shape: {sigma.shape}")
+    print(f"Theta lengths per house: { {h: len(theta[h]) for h in theta} }, Mu length: {len(mu)}, Sigma length: {len(sigma)}")
 
 
 if __name__ == "__main__":
