@@ -15,7 +15,7 @@ $(VENV)/bin/python:
 	python3 -m venv $(VENV)
 
 train: 
-	@$(PY) src/train.py $(filter-out $@,$(MAKECMDGOALS))
+	@$(PY) src/logreg_train.py $(filter-out $@,$(MAKECMDGOALS))
 
 predict: 
 	$(PY) src/predict.py
