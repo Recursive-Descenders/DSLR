@@ -1,5 +1,15 @@
 # This is a copy of my linear regretion Makefile, change as we develop the project
 
+# Extra words after the real target (e.g. `make predict dataset_test.csv model/model.json`)
+# are otherwise separate goals and Make will treat existing files as "up to date" / "nothing to do".
+# Mark them phony so they only satisfy the goal list without touching the real files.
+ifneq ($(word 2,$(MAKECMDGOALS)),)
+  EXTRA_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  .PHONY: $(EXTRA_ARGS)
+  $(EXTRA_ARGS):
+	@:
+endif
+
 VENV := .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip

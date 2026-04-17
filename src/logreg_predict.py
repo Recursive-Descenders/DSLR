@@ -150,6 +150,8 @@ def main():
     probabilities = {house: predict_probability(xs_scaled, theta[house]) for house in theta}
     predicted_houses = predict_house_save_csv(probabilities, indices)
 
+    print("Predictions saved to houses.csv")
+
     labeled = [(a, p) for a, p in zip(actual_houses, predicted_houses) if a]
     if labeled:
         correct = sum(1 for a, p in labeled if a == p)
