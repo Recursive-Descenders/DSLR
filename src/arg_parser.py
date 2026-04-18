@@ -15,9 +15,9 @@ def build_parser():
     training.add_argument(
         "-o",
         "--optimizer",
-        choices=("gd", "sgd"),
+        choices=("gd", "mbgd", "sgd"),
         default="gd",
-        help="Optimization algorithm",
+        help="gd = full-batch GD; mbgd = minibatch GD (see --batch-size); sgd = batch size 1 (no --batch-size)",
     )
     training.add_argument(
         "--lr",
@@ -29,7 +29,7 @@ def build_parser():
         "-e",
         "--epochs",
         type=int,
-        default=5000,
+        default=200,
         help="Number of training epochs",
     )
     training.add_argument(
@@ -38,6 +38,6 @@ def build_parser():
         type=int,
         default=None,
         metavar="N",
-        help="Minibatch size (only used with --optimizer sgd)",
+        help="Minibatch size for --optimizer mbgd only (>= 2); default 25%% of dataset if omitted; not used with gd or sgd",
     )
     return parser

@@ -82,19 +82,37 @@ def standardize(x):
     sigma = np.where(sigma < 1e-12, 1.0, sigma)
     return (x - mu) / sigma, mu, sigma
 
-def logistic_regression(x, y, alpha=0.01, epochs=5000):
-    """Binary logistic regression; theta[0] is bias, gradient descent matches subject annex."""
+def logistic_regression(x, y, alpha=0.01, epochs=200, batch_size=None):
+    """Binary logistic regression; theta[0] is bias. batch_size None or m => batch GD; else minibatch or SGD (batch 1)."""
     ones = np.ones((x.shape[0], 1))
     xb = np.hstack([ones, x])
+    m = xb.shape[0]
     theta = np.random.randn(xb.shape[1]) * 0.01
+    y = np.asarray(y, dtype=float)
+
+    if batch_size is None:
+        batch_size = m
+    elif batch_size <= 0:
+        raise ValueError("batch_size must be positive")
 
     for epoch in range(epochs):
-        z = np.clip(xb.dot(theta), -500, 500)
-        h = 1 / (1 + np.exp(-z))
-        theta -= alpha * xb.T.dot(h - y) / len(y)
+        indices = np.random.permutation(m)
+        x_shuffled = xb[indices]
+        y_shuffled = y[indices]
 
-        if (epoch + 1) % 1000 == 0:
-            acc = np.mean(((h > 0.5).astype(int) == y)) * 100
+        for start in range(0, m, batch_size):
+            end = start + batch_size
+            x_batch = x_shuffled[start:end]
+            y_batch = y_shuffled[start:end]
+            z = np.clip(x_batch.dot(theta), -500, 500)
+            h = 1 / (1 + np.exp(-z))
+            gradient = x_batch.T.dot(h - y_batch) / len(y_batch)
+            theta = theta - alpha * gradient
+
+        if (epoch + 1) % (epochs / 10) == 0:
+            z_full = np.clip(xb.dot(theta), -500, 500)
+            h_full = 1 / (1 + np.exp(-z_full))
+            acc = np.mean(((h_full > 0.5).astype(int) == y)) * 100
             print(f"Epoch {epoch + 1}/{epochs}, Accuracy: {acc:.2f}%")
 
     return theta
@@ -103,11 +121,12 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    if args.batch_size is not None and args.optimizer != "sgd":
-        parser.error("--batch-size is only valid with --optimizer sgd")
+    if args.optimizer == "gd" and args.batch_size is not None:
+        parser.error("--batch-size applies only to --optimizer mbgd")
+    if args.optimizer == "sgd" and args.batch_size is not None:
+        parser.error("--batch-size is not used with --optimizer sgd (one example per update)")
     if args.batch_size is not None and args.batch_size < 1:
         parser.error("--batch-size must be a positive integer")
-
 
     csv_file = args.csv
     xs_array, ys_dict = load_xy(csv_file)
@@ -115,18 +134,39 @@ def main():
         print("Error: no valid training samples after loading.", file=sys.stderr)
         sys.exit(1)
 
+    m = xs_array.shape[0]
     medians = column_medians_for_imputation(xs_array)
     xs_imputed = apply_median_imputation(xs_array, medians)
     standard_xs_array, mu, sigma = standardize(xs_imputed)
 
-    if args.optimizer == "sgd":
-        xs
+    if args.optimizer == "gd":
+        train_batch_size = None
+    elif args.optimizer == "sgd":
+        train_batch_size = 1
+    else:
+        if m < 2:
+            parser.error("--optimizer mbgd requires at least 2 training samples")
+        if args.batch_size is None:
+            train_batch_size = min(m, max(2, int(m * 0.25)))
+        else:
+            if args.batch_size == 1:
+                parser.error("batch size 1 is SGD; use --optimizer sgd")
+            if args.batch_size > m:
+                parser.error(
+                    f"--batch-size must be at most the number of training samples ({m})"
+                )
+            train_batch_size = args.batch_size
 
     n_params = standard_xs_array.shape[1] + 1
     theta = {h: [0.0] * n_params for h in ("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin")}
     for house in theta:
+        print("house: ", house)
         theta[house] = logistic_regression(
-            standard_xs_array, ys_dict[house], alpha=args.lr, epochs=args.epochs
+            standard_xs_array,
+            ys_dict[house],
+            alpha=args.lr,
+            epochs=args.epochs,
+            batch_size=train_batch_size,
         ).tolist()
 
     os.makedirs("model", exist_ok=True)
