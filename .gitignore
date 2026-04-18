@@ -1,4 +1,6 @@
 .venv
+__pycache__/
+*.pyc
 en.subject.pdf
 subject.txt
 model/model.json

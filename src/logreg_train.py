@@ -1,7 +1,7 @@
 import json, os, sys
 import numpy as np
 import csv
-
+from arg_parser import build_parser
 
 def load_xy(csv_path):
     """Load training CSV into X and per-house binary labels (one-vs-all). Missing values as NaN."""
@@ -43,6 +43,9 @@ def load_xy(csv_path):
                 except (ValueError, IndexError):
                     continue
 
+    except FileNotFoundError:
+        print(f"Error: cannot read {csv_path}: no such file or directory", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"Error: cannot read {csv_path}: {e}", file=sys.stderr)
         sys.exit(1)
@@ -79,7 +82,6 @@ def standardize(x):
     sigma = np.where(sigma < 1e-12, 1.0, sigma)
     return (x - mu) / sigma, mu, sigma
 
-
 def logistic_regression(x, y, alpha=0.01, epochs=5000):
     """Binary logistic regression; theta[0] is bias, gradient descent matches subject annex."""
     ones = np.ones((x.shape[0], 1))
@@ -97,9 +99,17 @@ def logistic_regression(x, y, alpha=0.01, epochs=5000):
 
     return theta
 
-
 def main():
-    csv_file = sys.argv[1] if len(sys.argv) > 1 else "dataset_train.csv"
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if args.batch_size is not None and args.optimizer != "sgd":
+        parser.error("--batch-size is only valid with --optimizer sgd")
+    if args.batch_size is not None and args.batch_size < 1:
+        parser.error("--batch-size must be a positive integer")
+
+
+    csv_file = args.csv
     xs_array, ys_dict = load_xy(csv_file)
     if xs_array.size == 0 or xs_array.ndim != 2 or xs_array.shape[0] == 0:
         print("Error: no valid training samples after loading.", file=sys.stderr)
@@ -109,10 +119,15 @@ def main():
     xs_imputed = apply_median_imputation(xs_array, medians)
     standard_xs_array, mu, sigma = standardize(xs_imputed)
 
+    if args.optimizer == "sgd":
+        xs
+
     n_params = standard_xs_array.shape[1] + 1
     theta = {h: [0.0] * n_params for h in ("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin")}
     for house in theta:
-        theta[house] = logistic_regression(standard_xs_array, ys_dict[house]).tolist()
+        theta[house] = logistic_regression(
+            standard_xs_array, ys_dict[house], alpha=args.lr, epochs=args.epochs
+        ).tolist()
 
     os.makedirs("model", exist_ok=True)
     with open("model/model.json", "w") as f:
