@@ -14,7 +14,7 @@ VENV := .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: default setup train predict clean clean-all help
+.PHONY: default setup train predict evaluate clean clean-all help
 default: setup
 
 setup: $(VENV)/bin/python
@@ -30,8 +30,8 @@ train:
 predict: 
 	$(PY) src/logreg_predict.py $(filter-out $@,$(MAKECMDGOALS))
 
-evaluate: 
-	@$(PY) src/evaluate.py $(filter-out $@,$(MAKECMDGOALS))
+evaluate:
+	@$(PY) src/logreg_evaluate.py $(filter-out $@,$(MAKECMDGOALS))
 
 clean:
 	rm -rf __pycache__ src/__pycache__ model/*.json plots/*.png plot.png epochs.gif
