@@ -1,7 +1,15 @@
 import csv
+import os
 import sys
 
 from sklearn.metrics import accuracy_score
+
+if os.environ.get("NO_COLOR"):
+    _R = _G = _D = ""
+else:
+    _R = "\033[0m"
+    _G = "\033[32m"
+    _D = "\033[2m"
 
 EXPECTED_HEADERS = ("Index", "Hogwarts House")
 
@@ -67,7 +75,11 @@ def evaluate(predictions_path: str, truth_path: str) -> float:
     y_pred = [pred[i] for i in common]
     acc = float(accuracy_score(y_true, y_pred))
     pct = 100.0 * acc
-    print(f"Accuracy: {pct:.4f}% ({int(acc * len(common))}/{len(common)} correct on overlapping indices)")
+    correct_n = int(acc * len(common))
+    print(
+        f"{_D}Accuracy{_R} {_G}{pct:.4f}%{_R} "
+        f"{_D}({correct_n}/{len(common)} correct on overlapping indices){_R}"
+    )
     return acc
 
 

@@ -2,6 +2,14 @@ import json, os, sys
 import numpy as np
 import csv
 
+if os.environ.get("NO_COLOR"):
+    _R = _G = _C = _D = ""
+else:
+    _R = "\033[0m"
+    _G = "\033[32m"
+    _C = "\033[36m"
+    _D = "\033[2m"
+
 
 def load_model(path="model/model.json"):
     if os.path.exists(path):
@@ -36,7 +44,6 @@ def load_x_test(csv_path):
     """Same feature construction as training. House column may be empty (e.g. dataset_test.csv)."""
     xs = []
     indices = []
-    actual_houses = []
 
     try:
         with open(csv_path, "r") as f:
@@ -49,7 +56,6 @@ def load_x_test(csv_path):
 
                 try:
                     index = row[0].strip()
-                    house = row[1].strip()
 
                     bh = row[5].strip()
                     best_hand_val = np.nan if not bh else (1.0 if bh == "Right" else 0.0)
@@ -61,7 +67,6 @@ def load_x_test(csv_path):
 
                     xs.append(x_row)
                     indices.append(index)
-                    actual_houses.append(house)
 
                 except (ValueError, IndexError):
                     continue
@@ -70,7 +75,7 @@ def load_x_test(csv_path):
         print(f"Error: cannot read {csv_path}: {e}", file=sys.stderr)
         sys.exit(1)
 
-    return np.array(xs, dtype=float), indices, actual_houses
+    return np.array(xs, dtype=float), indices
 
 
 def standardize(x, mu, sigma):
@@ -136,11 +141,11 @@ def main():
             print(f"Error: missing or empty theta for {house}. Please train the model first.", file=sys.stderr)
             sys.exit(1)
 
-    xs_array, indices, actual_houses = load_x_test(csv_file)
+    xs_array, indices = load_x_test(csv_file)
     if len(xs_array) == 0 or xs_array.ndim != 2 or xs_array.shape[0] == 0:
         print("Error: no valid test samples after loading.", file=sys.stderr)
         sys.exit(1)
-    print(f"Loaded {len(xs_array)} test samples")
+    print(f"{_D}Loaded{_R} {_C}{len(xs_array)}{_R} {_D}test samples{_R}")
 
     if xs_array.shape[1] != medians.shape[0]:
         print("Error: feature count does not match model medians.", file=sys.stderr)
@@ -148,14 +153,9 @@ def main():
 
     xs_scaled = standardize(apply_median_imputation(xs_array, medians), mu, sigma)
     probabilities = {house: predict_probability(xs_scaled, theta[house]) for house in theta}
-    predicted_houses = predict_house_save_csv(probabilities, indices)
+    predict_house_save_csv(probabilities, indices)
 
-    print("Predictions saved to houses.csv")
-
-    labeled = [(a, p) for a, p in zip(actual_houses, predicted_houses) if a]
-    if labeled:
-        correct = sum(1 for a, p in labeled if a == p)
-        print(f"Accuracy (labeled rows only): {100 * correct / len(labeled):.2f}% ({correct}/{len(labeled)})")
+    print(f"{_G}Predictions saved{_R} {_D}:{_R} {_C}houses.csv{_R}")
 
 
 if __name__ == "__main__":

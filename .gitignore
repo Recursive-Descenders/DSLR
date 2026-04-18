@@ -4,5 +4,6 @@ __pycache__/
 en.subject.pdf
 subject.txt
 model/model.json
+model/training_loss.png
 houses.csv
 PR.md
