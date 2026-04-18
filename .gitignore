@@ -3,7 +3,6 @@ __pycache__/
 *.pyc
 en.subject.pdf
 subject.txt
-model/model.json
-model/training_loss.png
+model/
 houses.csv
 PR.md
