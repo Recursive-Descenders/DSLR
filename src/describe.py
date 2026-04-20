@@ -54,6 +54,7 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
 
 
 def describe_dataframe(df: pandas.DataFrame) -> pandas.DataFrame:
+    df = df.drop(columns=["Index"], errors="ignore")
     description = {
         column_name: describe_column(df[column_name])
         for column_name in df.columns
