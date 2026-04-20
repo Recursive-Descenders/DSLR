@@ -24,6 +24,9 @@ setup: $(VENV)/bin/python
 $(VENV)/bin/python:
 	python3 -m venv $(VENV)
 
+histogram:
+	@$(PY) src/histogram.py $(filter-out $@,$(MAKECMDGOALS))
+  
 describe:
 	@$(PY) src/describe.py $(filter-out $@,$(MAKECMDGOALS))
 
