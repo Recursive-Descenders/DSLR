@@ -14,7 +14,7 @@ VENV := .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: default setup train predict evaluate confusion clean clean-all help
+.PHONY: default setup describe train predict evaluate confusion clean clean-all help
 default: setup
 
 setup: $(VENV)/bin/python
@@ -26,6 +26,9 @@ $(VENV)/bin/python:
 
 histogram:
 	@$(PY) src/histogram.py $(filter-out $@,$(MAKECMDGOALS))
+  
+describe:
+	@$(PY) src/describe.py $(filter-out $@,$(MAKECMDGOALS))
 
 train:
 	@$(PY) src/logreg_train.py $(filter-out $@,$(MAKECMDGOALS))
