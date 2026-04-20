@@ -27,6 +27,9 @@ $(VENV)/bin/python:
 histogram:
 	@$(PY) src/histogram.py $(filter-out $@,$(MAKECMDGOALS))
 
+scatter_plot:
+	@$(PY) src/scatter_plot.py $(filter-out $@,$(MAKECMDGOALS))
+
 train:
 	@$(PY) src/logreg_train.py $(filter-out $@,$(MAKECMDGOALS))
 
