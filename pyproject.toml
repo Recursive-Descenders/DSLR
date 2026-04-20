@@ -12,7 +12,6 @@ dependencies = [
     "numpy==2.1.1",
     "matplotlib==3.10",
     "Pillow==10.0.0",
-    "scikit-learn==1.5.2",
     "pandas==2.3",
 ]
 
@@ -21,7 +20,6 @@ describe = "describe:main"
 histogram = "histogram:main"
 train = "logreg_train:main"
 predict = "logreg_predict:main"
-evaluate = "logreg_evaluate:main"
 confusion = "confusion_matrix:main"
 
 [tool.setuptools]
@@ -31,7 +29,6 @@ py-modules = [
     "confusion_matrix",
     "describe",
     "histogram",
-    "logreg_evaluate",
     "logreg_predict",
     "logreg_train",
     "utils",

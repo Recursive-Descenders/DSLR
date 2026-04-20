@@ -78,7 +78,7 @@ def load_x_test(csv_path):
     return np.array(xs, dtype=float), indices
 
 
-def standardize(x, mu, sigma):
+def normalize(x, mu, sigma):
     if isinstance(mu, (int, float)):
         mu = np.array([mu])
     if isinstance(sigma, (int, float)):
@@ -151,7 +151,7 @@ def main():
         print("Error: feature count does not match model medians.", file=sys.stderr)
         sys.exit(1)
 
-    xs_scaled = standardize(apply_median_imputation(xs_array, medians), mu, sigma)
+    xs_scaled = normalize(apply_median_imputation(xs_array, medians), mu, sigma)
     probabilities = {house: predict_probability(xs_scaled, theta[house]) for house in theta}
     predict_house_save_csv(probabilities, indices)
 

@@ -89,7 +89,7 @@ def apply_median_imputation(x, medians):
         col[np.isnan(col)] = m[j]
     return x
 
-def standardize(x):
+def normalize(x):
     mu = np.mean(x, axis=0)
     sigma = np.std(x, axis=0)
     sigma = np.where(sigma < 1e-12, 1.0, sigma)
@@ -150,7 +150,7 @@ def main():
     m = xs_array.shape[0]
     medians = column_medians_for_imputation(xs_array)
     xs_imputed = apply_median_imputation(xs_array, medians)
-    standard_xs_array, mu, sigma = standardize(xs_imputed)
+    normal_xs_array, mu, sigma = normalize(xs_imputed)
 
     if args.optimizer == "gd":
         train_batch_size = None
@@ -170,14 +170,14 @@ def main():
                 )
             train_batch_size = args.batch_size
 
-    n_params = standard_xs_array.shape[1] + 1
+    n_params = normal_xs_array.shape[1] + 1
     houses = ("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin")
     theta = {h: [0.0] * n_params for h in houses}
     loss_by_house = {}
     for house in theta:
         print(f"{_D}train{_R} {_C}{house}{_R}")
         th, losses = logistic_regression(
-            standard_xs_array,
+            normal_xs_array,
             ys_dict[house],
             alpha=args.lr,
             epochs=args.epochs,
