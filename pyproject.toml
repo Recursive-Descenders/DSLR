@@ -18,6 +18,7 @@ dependencies = [
 [project.scripts]
 describe = "describe:main"
 histogram = "histogram:main"
+scatter_plot = "scatter_plot:main"
 train = "logreg_train:main"
 predict = "logreg_predict:main"
 confusion = "confusion_matrix:main"
@@ -31,5 +32,6 @@ py-modules = [
     "histogram",
     "logreg_predict",
     "logreg_train",
+    "scatter_plot",
     "utils",
 ]
