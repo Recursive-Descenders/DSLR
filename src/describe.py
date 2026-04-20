@@ -24,7 +24,16 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
     values = [float(value) for value in column if not pandas.isna(value)]
     count = len(values)
     if count == 0:
-        return {stat: float("nan") for stat in STAT_ORDER}
+        return {
+            "count": 0.0,
+            "mean": float("nan"),
+            "std": float("nan"),
+            "min": float("nan"),
+            "25%": float("nan"),
+            "50%": float("nan"),
+            "75%": float("nan"),
+            "max": float("nan"),
+        }
 
     values.sort()
     total = sum(values)
