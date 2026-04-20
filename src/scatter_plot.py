@@ -55,7 +55,7 @@ def main() -> None:
             for house in houses:
                 house_data = df.loc[df["Hogwarts House"] == house, [x_subject, y_subject]].dropna()
                 if not house_data.empty:
-                    scatter = axis.scatter(
+                    axis.scatter(
                         house_data[x_subject],
                         house_data[y_subject],
                         alpha=0.55,
