@@ -64,7 +64,14 @@ def main() -> None:
     args = parser.parse_args(sys.argv[1:])
 
     # We only care about numeric columns, no name, birthday, etc...
-    df = pandas.read_csv(args.csv).select_dtypes(include="number")
+    try:
+        df = pandas.read_csv(args.csv).select_dtypes(include="number")
+    except FileNotFoundError:
+        parser.exit(1, f"error: CSV file not found: {args.csv}\n")
+    except pandas.errors.ParserError as error:
+        parser.exit(1, f"error: failed to parse CSV '{args.csv}': {error}\n")
+    except OSError as error:
+        parser.exit(1, f"error: failed to read CSV '{args.csv}': {error}\n")
     print(describe_dataframe(df))
 
 
