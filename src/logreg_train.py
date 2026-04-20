@@ -192,6 +192,7 @@ def main():
     if args.plot_loss and loss_by_house:
         import matplotlib.pyplot as plt
 
+        os.makedirs("visualizations", exist_ok=True)
         fig, axes = plt.subplots(2, 2, figsize=(10, 8))
         epochs_axis = np.arange(1, args.epochs + 1)
         for ax, house in zip(axes.flat, houses):
@@ -201,7 +202,7 @@ def main():
             ax.set_ylabel("Loss (binary cross-entropy)")
         fig.suptitle("Training loss vs epoch (one-vs-all per house)")
         fig.tight_layout()
-        out_path = os.path.join("model", "training_loss.png")
+        out_path = os.path.join("visualizations", "training_loss.png")
         fig.savefig(out_path, dpi=150)
         plt.close(fig)
         print(f"{_G}Loss curves saved{_R} {_D}:{_R} {out_path}")

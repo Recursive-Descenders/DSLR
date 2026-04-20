@@ -48,6 +48,6 @@ def build_parser():
         "--plot-loss",
         action="store_true",
         dest="plot_loss",
-        help="After training, save loss vs. epoch plots (one subplot per house) to model/training_loss.png",
+        help="After training, save loss vs. epoch plots (one subplot per house) to visualizations/training_loss.png",
     )
     return parser
