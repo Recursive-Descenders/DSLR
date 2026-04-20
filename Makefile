@@ -24,10 +24,13 @@ setup: $(VENV)/bin/python
 $(VENV)/bin/python:
 	python3 -m venv $(VENV)
 
-train: 
+histogram:
+	@$(PY) src/histogram.py $(filter-out $@,$(MAKECMDGOALS))
+
+train:
 	@$(PY) src/logreg_train.py $(filter-out $@,$(MAKECMDGOALS))
 
-predict: 
+predict:
 	$(PY) src/logreg_predict.py $(filter-out $@,$(MAKECMDGOALS))
 
 evaluate:
