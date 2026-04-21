@@ -15,6 +15,9 @@ BONUS_STAT_ORDER = [
     "outliers_iqr_count",
 ]
 
+COMPACT_MAX_COLUMNS = 7
+COMPACT_WIDTH = 120
+
 
 def percentile(sorted_values: list[float], quantile: float) -> float:
     count = len(sorted_values)
@@ -32,16 +35,15 @@ def percentile(sorted_values: list[float], quantile: float) -> float:
     return lower_value + (upper_value - lower_value) * fraction
 
 
-def describe_column(column: pandas.Series, include_bonus: bool) -> dict[str, float]:
-    total_count = len(column)
-    values = [float(value) for value in column if not pandas.isna(value)]
-    count = len(values)
-    missing_count = total_count - count
-    missing_pct = (missing_count / total_count * 100.0) if total_count > 0 else float("nan")
+def numeric_values(column: pandas.Series) -> list[float]:
+    return sorted(float(value) for value in column if not pandas.isna(value))
 
+
+def build_base_stats(values: list[float]) -> dict[str, float | int]:
+    count = len(values)
     if count == 0:
-        result = {
-            "count": 0.0,
+        return {
+            "count": 0,
             "mean": float("nan"),
             "std": float("nan"),
             "min": float("nan"),
@@ -50,58 +52,78 @@ def describe_column(column: pandas.Series, include_bonus: bool) -> dict[str, flo
             "75%": float("nan"),
             "max": float("nan"),
         }
-        if include_bonus:
-            result.update(
-                {
-                    "missing_count": float(missing_count),
-                    "missing_pct": missing_pct,
-                    "variance": float("nan"),
-                    "range": float("nan"),
-                    "iqr": float("nan"),
-                    "outliers_iqr_count": 0.0,
-                }
-            )
-        return result
 
-    values.sort()
     total = sum(values)
     mean = total / count
     squared_diffs = sum((value - mean) ** 2 for value in values)
-    var = squared_diffs / (count - 1) if count > 1 else float("nan")
-    std = math.sqrt(var) if count > 1 else float("nan")
+    variance = squared_diffs / (count - 1) if count > 1 else float("nan")
+    std = math.sqrt(variance) if count > 1 else float("nan")
 
-    q1 = percentile(values, 0.25)
-    q2 = percentile(values, 0.50)
-    q3 = percentile(values, 0.75)
-    iqr = q3 - q1
-    lower_bound = q1 - 1.5 * iqr
-    upper_bound = q3 + 1.5 * iqr
-    outliers_iqr_count = float(
-        sum(1 for value in values if value < lower_bound or value > upper_bound)
-    )
-
-    result = {
-        "count": float(count),
+    return {
+        "count": count,
         "mean": mean,
         "std": std,
         "min": values[0],
-        "25%": q1,
-        "50%": q2,
-        "75%": q3,
+        "25%": percentile(values, 0.25),
+        "50%": percentile(values, 0.50),
+        "75%": percentile(values, 0.75),
         "max": values[-1],
     }
-    if include_bonus:
-        result.update(
-            {
-                "missing_count": float(missing_count),
-                "missing_pct": missing_pct,
-                "variance": var,
-                "range": values[-1] - values[0],
-                "iqr": iqr,
-                "outliers_iqr_count": outliers_iqr_count,
-            }
-        )
-    return result
+
+
+def build_bonus_stats(
+    values: list[float],
+    total_count: int,
+    q1: float,
+    q3: float,
+) -> dict[str, float | int]:
+    count = len(values)
+    missing_count = total_count - count
+    missing_pct = (missing_count / total_count * 100.0) if total_count > 0 else float("nan")
+
+    if count == 0:
+        return {
+            "missing_count": missing_count,
+            "missing_pct": missing_pct,
+            "variance": float("nan"),
+            "range": float("nan"),
+            "iqr": float("nan"),
+            "outliers_iqr_count": 0,
+        }
+
+    mean = sum(values) / count
+    squared_diffs = sum((value - mean) ** 2 for value in values)
+    variance = squared_diffs / (count - 1) if count > 1 else float("nan")
+    value_range = values[-1] - values[0]
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    outliers_iqr_count = sum(1 for value in values if value < lower_bound or value > upper_bound)
+
+    return {
+        "missing_count": missing_count,
+        "missing_pct": missing_pct,
+        "variance": variance,
+        "range": value_range,
+        "iqr": iqr,
+        "outliers_iqr_count": outliers_iqr_count,
+    }
+
+
+def describe_column(column: pandas.Series, include_bonus: bool) -> dict[str, float | int]:
+    total_count = len(column)
+    values = numeric_values(column)
+    base_stats = build_base_stats(values)
+    if not include_bonus:
+        return base_stats
+
+    bonus_stats = build_bonus_stats(
+        values,
+        total_count,
+        q1=float(base_stats["25%"]),
+        q3=float(base_stats["75%"]),
+    )
+    return {**base_stats, **bonus_stats}
 
 
 def describe_dataframe(df: pandas.DataFrame, include_bonus: bool) -> pandas.DataFrame:
@@ -127,9 +149,9 @@ def print_description_table(table: pandas.DataFrame, full: bool) -> None:
 
     with pandas.option_context(
         "display.max_columns",
-        8,
+        COMPACT_MAX_COLUMNS,
         "display.width",
-        120,
+        COMPACT_WIDTH,
     ):
         print(table)
 
