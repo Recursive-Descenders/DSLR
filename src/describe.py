@@ -3,6 +3,8 @@ import argparse, math, pandas, sys
 
 STAT_ORDER = [
     "count",
+    "missing_count",
+    "missing_pct",
     "mean",
     "std",
     "min",
@@ -34,11 +36,16 @@ def percentile(sorted_values: list[float], quantile: float) -> float:
 
 
 def describe_column(column: pandas.Series) -> dict[str, float]:
+    total_count = len(column)
     values = [float(value) for value in column if not pandas.isna(value)]
     count = len(values)
+    missing_count = total_count - count
+    missing_pct = (missing_count / total_count * 100.0) if total_count > 0 else float("nan")
     if count == 0:
         return {
             "count": 0.0,
+            "missing_count": float(missing_count),
+            "missing_pct": missing_pct,
             "mean": float("nan"),
             "std": float("nan"),
             "min": float("nan"),
@@ -71,6 +78,8 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
 
     return {
         "count": float(count),
+        "missing_count": float(missing_count),
+        "missing_pct": missing_pct,
         "mean": mean,
         "std": std,
         "min": values[0],
