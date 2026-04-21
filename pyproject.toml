@@ -19,6 +19,7 @@ dependencies = [
 describe = "describe:main"
 histogram = "histogram:main"
 scatter_plot = "scatter_plot:main"
+pair_plot = "pair_plot:main"
 train = "logreg_train:main"
 predict = "logreg_predict:main"
 confusion = "confusion_matrix:main"
