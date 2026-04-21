@@ -8,45 +8,52 @@ This repository is intended as a reference and educational tool. 42 students are
 
 ## Credits
 
-- **Data analysis and exploration** — [ChimPansky](https://github.com/ChimPansky)
-- **Training, inference, and evaluation** — [Mohamad Zolfaghari Pour](https://github.com/zolfagharipour)
+- **Data analysis and exploration** — [ChimPansky](https://github.com/ChimPansky): `describe`, `histogram`, `scatter_plot`, `pair_plot`.
+- **Training, inference, and evaluation** — [Mohamad Zolfaghari Pour](https://github.com/zolfagharipour): `train` (`logreg_train`), `predict` (`logreg_predict`), `confusion`.
 
 ## Setup
 
 Requires **Python 3.11+**.
 
-Install `uv` (pick one): see the [uv install guide](https://docs.astral.sh/uv/getting-started/installation/), or e.g. `pipx install uv` if you already use pipx.
-
-From the repository root:
+Install **`uv`** (see the [uv install guide](https://docs.astral.sh/uv/getting-started/installation/), or e.g. `pipx install uv`). From the repository root:
 
 ```bash
 uv sync
 ```
 
-Then either prefix commands with `uv run` (uses the project env automatically):
+Run tools with `uv run <command>` or activate `.venv` (`source .venv/bin/activate` on Unix) and use the same names.
+
+**Console scripts:** `describe`, `histogram`, `scatter_plot`, `pair_plot`, `train`, `predict`, `confusion`. Use `-h` / `--help` where supported.
+
+**Outputs:** `model/model.json` after training; figures under `visualizations/`. Sample data: `dataset_train.csv`, `dataset_test.csv`, `dataset_truth.csv` (labels for evaluation).
+
+## Typical flow
+
+| Step | Command (after `uv sync`) | Details |
+|------|---------------------------|---------|
+| Summarize | `uv run describe [--csv PATH] [--full] [--bonus]` | [doc/describe.md](doc/describe.md) — stats, NaN rules, `--bonus` rows |
+| Plot | `uv run histogram` / `scatter_plot` / `pair_plot` each `[--csv PATH]` | [doc/visualizations.md](doc/visualizations.md) — shared CSV contract, filenames |
+| Train | `uv run train [PATH]` — `--optimizer {gd,mbgd,sgd}`, `--lr`, `--epochs`, `--batch-size` (MBGD only), `--plot-loss` | [doc/train.md](doc/train.md) — features, preprocessing, **algorithm**, artifacts |
+| Predict | `uv run predict [dataset_test.csv] [model/model.json]` | [doc/predict.md](doc/predict.md) — writes `houses.csv` |
+| Evaluate | See [Confusion matrix](#confusion-matrix) | Compare predictions to a labeled CSV |
+
+Default CSV for exploration commands is `dataset_train.csv` where not shown.
+
+## Confusion matrix
+
+With `houses.csv` from `predict` and a ground-truth file using the same `Index,Hogwarts House` columns (e.g. `dataset_truth.csv`):
 
 ```bash
-uv run describe
-uv run train
+uv run confusion dataset_truth.csv houses.csv
 ```
 
-—or activate the env and run the scripts directly: `source .venv/bin/activate` on Unix, then `describe`, `train`, etc.
-
-That exposes console scripts: `describe`, `histogram`, `scatter_plot`, `pair_plot`, `train`, `predict`, and `confusion`. Use `-h` / `--help` on each where available.
-
-**Layout:** training writes `model/model.json`; optional plots go under `visualizations/`. Sample CSVs are `dataset_train.csv`, `dataset_test.csv`, and `dataset_truth.csv` (for evaluation).
-
-**Typical flow**
-
-- **Summarize numeric columns:** `describe [--csv PATH] [--full] [--bonus]`
-- **Plots (training CSV):** `histogram` / `scatter_plot` / `pair_plot` — each accepts `--csv` (default `dataset_train.csv`); see `--help` for details.
-- **Train:** `train [dataset_train.csv]` — flags include `--optimizer {gd,mbgd,sgd}`, `--lr`, `--epochs`, `--batch-size` (MBGD only), `--plot-loss` (writes `visualizations/training_loss.png`).
-- **Predict:** `predict [dataset_test.csv] [model/model.json]` — writes `houses.csv` in the current working directory.
-- **Confusion matrix vs ground truth:** `confusion dataset_truth.csv [houses.csv]` — saves `visualizations/confusion_matrix.png`.
-
+Writes `visualizations/confusion_matrix.png` (true vs predicted counts, fixed house order).
 
 ## Documentation
 
-- [doc/describe.md](doc/describe.md) — how `describe` treats non-numeric columns, missing values, and NaN in aggregations.
-- [doc/train.md](doc/train.md) — training pipeline, **one-vs-all logistic regression algorithm** (loss, gradients, optimizers), features, preprocessing, artifacts (`model/model.json`, optional loss plot).
-- [doc/predict.md](doc/predict.md) — loading the model, test CSV rules, and `houses.csv` output.
+| Doc | Contents |
+|-----|----------|
+| [doc/describe.md](doc/describe.md) | CLI, numeric-only columns, statistic definitions (base + `--bonus`), NaN handling, display modes |
+| [doc/visualizations.md](doc/visualizations.md) | `histogram`, `scatter_plot`, `pair_plot`; shared loader rules; DPI and output names; pointers to loss and confusion figures |
+| [doc/train.md](doc/train.md) | Loader and features (aligned with predict), preprocessing, **one-vs-all logistic regression** (loss, gradients, optimizers), `model.json`, `--plot-loss` |
+| [doc/predict.md](doc/predict.md) | Model file requirements, test CSV rules, argmax decoding, `houses.csv` contract |
