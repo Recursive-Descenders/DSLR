@@ -33,6 +33,7 @@ py-modules = [
     "histogram",
     "logreg_predict",
     "logreg_train",
+    "pair_plot",
     "scatter_plot",
     "utils",
 ]
