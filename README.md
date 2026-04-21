@@ -38,32 +38,15 @@ That exposes console scripts: `describe`, `histogram`, `scatter_plot`, `pair_plo
 
 **Typical flow**
 
-- Summarize numeric columns: `describe [--csv PATH] [--full] [--bonus]`
-- Plots (training CSV): `histogram` / `scatter_plot` / `pair_plot` — each accepts `--csv` (default `dataset_train.csv`); see `--help` for details.
-- Train: `train [dataset_train.csv]` — flags include `--optimizer {gd,mbgd,sgd}`, `--lr`, `--epochs`, `--batch-size` (MBGD only), `--plot-loss` (writes `visualizations/training_loss.png`).
-- Predict: `predict [dataset_test.csv] [model/model.json]` — writes `houses.csv` in the current working directory.
-- Confusion matrix vs ground truth: `confusion dataset_truth.csv [houses.csv]` — saves `visualizations/confusion_matrix.png`.
+- **Summarize numeric columns:** `describe [--csv PATH] [--full] [--bonus]`
+- **Plots (training CSV):** `histogram` / `scatter_plot` / `pair_plot` — each accepts `--csv` (default `dataset_train.csv`); see `--help` for details.
+- **Train:** `train [dataset_train.csv]` — flags include `--optimizer {gd,mbgd,sgd}`, `--lr`, `--epochs`, `--batch-size` (MBGD only), `--plot-loss` (writes `visualizations/training_loss.png`).
+- **Predict:** `predict [dataset_test.csv] [model/model.json]` — writes `houses.csv` in the current working directory.
+- **Confusion matrix vs ground truth:** `confusion dataset_truth.csv [houses.csv]` — saves `visualizations/confusion_matrix.png`.
 
-For behavior, preprocessing, and file contracts, see the docs below rather than duplicating them here.
 
 ## Documentation
 
 - [doc/describe.md](doc/describe.md) — how `describe` treats non-numeric columns, missing values, and NaN in aggregations.
 - [doc/train.md](doc/train.md) — training pipeline, **one-vs-all logistic regression algorithm** (loss, gradients, optimizers), features, preprocessing, artifacts (`model/model.json`, optional loss plot).
 - [doc/predict.md](doc/predict.md) — loading the model, test CSV rules, and `houses.csv` output.
-
-## Scope and extras
-
-The work was originally scoped by an **internal coursework brief** that cannot be shared in this repo. What you see here is the full codebase: the “baseline” path is the exploration + visualization + one-vs-all logistic regression pipeline described above. Everything below is **extra** we added on top of that scope—useful, but not required to understand the main story.
-
----
-
-**Richer `describe`:** By default, `describe` prints standard numeric summaries: `count`, `mean`, `std`, `min`, `25%`, `50%`, `75%`, `max`. With `--bonus`, it also adds `missing_count`, `missing_pct`, `variance`, `range`, `iqr`, and `outliers_iqr_count` (IQR-based outlier count per column). That extension is part of the data-analysis work credited above.
-
----
-
-**Optimizers:** Full-batch gradient descent (`--optimizer gd`), minibatch GD (`--optimizer mbgd`, optional `--batch-size`; if omitted, batch size defaults to about 25% of the training set, capped sensibly), and SGD (`--optimizer sgd`, one example per update; `--batch-size` is not used).
-
----
-
-**Evaluation visuals:** `confusion` writes a multiclass confusion matrix to `visualizations/confusion_matrix.png`. Training can emit per-house loss curves with `--plot-loss` to `visualizations/training_loss.png`.
