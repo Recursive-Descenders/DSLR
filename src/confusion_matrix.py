@@ -141,8 +141,8 @@ def main() -> None:
     )
     fig.tight_layout()
 
-    os.makedirs("model", exist_ok=True)
-    out_path = os.path.join("model", "confusion_matrices.png")
+    os.makedirs("visualizations", exist_ok=True)
+    out_path = os.path.join("visualizations", "confusion_matrix.png")
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"{_G}Saved{_R} {_D}:{_R} {_C}{out_path}{_R}")
