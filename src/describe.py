@@ -1,7 +1,20 @@
 import argparse, math, pandas, sys
 
 
-STAT_ORDER = ["count", "mean", "std", "min", "25%", "50%", "75%", "max", "variance", "range"]
+STAT_ORDER = [
+    "count",
+    "mean",
+    "std",
+    "min",
+    "25%",
+    "50%",
+    "75%",
+    "max",
+    "variance",
+    "range",
+    "iqr",
+    "outliers_iqr_count",
+]
 
 
 def percentile(sorted_values: list[float], quantile: float) -> float:
@@ -35,6 +48,8 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
             "max": float("nan"),
             "variance": float("nan"),
             "range": float("nan"),
+            "iqr": float("nan"),
+            "outliers_iqr_count": 0.0,
         }
 
     values.sort()
@@ -44,19 +59,29 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
     var = squared_diffs / (count - 1) if count > 1 else float("nan")    # bonus: sample variance
     std = math.sqrt(var) if count > 1 else float("nan")
 
-    # bonus:
+    q1 = percentile(values, 0.25)
+    q2 = percentile(values, 0.50)
+    q3 = percentile(values, 0.75)
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    outliers_iqr_count = float(
+        sum(1 for value in values if value < lower_bound or value > upper_bound)
+    )
 
     return {
         "count": float(count),
         "mean": mean,
         "std": std,
         "min": values[0],
-        "25%": percentile(values, 0.25),
-        "50%": percentile(values, 0.50),
-        "75%": percentile(values, 0.75),
+        "25%": q1,
+        "50%": q2,
+        "75%": q3,
         "max": values[-1],
         "variance": var,
         "range": values[-1] - values[0],
+        "iqr": iqr,
+        "outliers_iqr_count": outliers_iqr_count,
     }
 
 
