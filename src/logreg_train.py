@@ -43,9 +43,11 @@ def load_xy(csv_path):
 
                     bh = row[5].strip()
                     best_hand_val = np.nan if not bh else (1.0 if bh == "Right" else 0.0)
-
                     x_row = [best_hand_val]
+                    # All course cols 6–18 except Defense (9), Potions (15), Care of Magical Creatures (16)
                     for i in range(6, 19):
+                        if i in (9, 15, 16):
+                            continue
                         v = row[i].strip()
                         x_row.append(np.nan if v == "" else float(v))
 
