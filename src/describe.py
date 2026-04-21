@@ -39,19 +39,22 @@ def numeric_values(column: pandas.Series) -> list[float]:
     return sorted(float(value) for value in column if not pandas.isna(value))
 
 
-def build_base_stats(values: list[float]) -> dict[str, float | int]:
+def build_base_stats(values: list[float]) -> tuple[dict[str, float | int], float]:
     count = len(values)
     if count == 0:
-        return {
-            "count": 0,
-            "mean": float("nan"),
-            "std": float("nan"),
-            "min": float("nan"),
-            "25%": float("nan"),
-            "50%": float("nan"),
-            "75%": float("nan"),
-            "max": float("nan"),
-        }
+        return (
+            {
+                "count": 0,
+                "mean": float("nan"),
+                "std": float("nan"),
+                "min": float("nan"),
+                "25%": float("nan"),
+                "50%": float("nan"),
+                "75%": float("nan"),
+                "max": float("nan"),
+            },
+            float("nan"),
+        )
 
     total = sum(values)
     mean = total / count
@@ -59,16 +62,19 @@ def build_base_stats(values: list[float]) -> dict[str, float | int]:
     variance = squared_diffs / (count - 1) if count > 1 else float("nan")
     std = math.sqrt(variance) if count > 1 else float("nan")
 
-    return {
-        "count": count,
-        "mean": mean,
-        "std": std,
-        "min": values[0],
-        "25%": percentile(values, 0.25),
-        "50%": percentile(values, 0.50),
-        "75%": percentile(values, 0.75),
-        "max": values[-1],
-    }
+    return (
+        {
+            "count": count,
+            "mean": mean,
+            "std": std,
+            "min": values[0],
+            "25%": percentile(values, 0.25),
+            "50%": percentile(values, 0.50),
+            "75%": percentile(values, 0.75),
+            "max": values[-1],
+        },
+        variance,
+    )
 
 
 def build_bonus_stats(
@@ -76,6 +82,7 @@ def build_bonus_stats(
     total_count: int,
     q1: float,
     q3: float,
+    variance: float,
 ) -> dict[str, float | int]:
     count = len(values)
     missing_count = total_count - count
@@ -91,9 +98,6 @@ def build_bonus_stats(
             "outliers_iqr_count": 0,
         }
 
-    mean = sum(values) / count
-    squared_diffs = sum((value - mean) ** 2 for value in values)
-    variance = squared_diffs / (count - 1) if count > 1 else float("nan")
     value_range = values[-1] - values[0]
     iqr = q3 - q1
     lower_bound = q1 - 1.5 * iqr
@@ -113,7 +117,7 @@ def build_bonus_stats(
 def describe_column(column: pandas.Series, include_bonus: bool) -> dict[str, float | int]:
     total_count = len(column)
     values = numeric_values(column)
-    base_stats = build_base_stats(values)
+    base_stats, variance = build_base_stats(values)
     if not include_bonus:
         return base_stats
 
@@ -122,6 +126,7 @@ def describe_column(column: pandas.Series, include_bonus: bool) -> dict[str, flo
         total_count,
         q1=float(base_stats["25%"]),
         q3=float(base_stats["75%"]),
+        variance=variance,
     )
     return {**base_stats, **bonus_stats}
 
