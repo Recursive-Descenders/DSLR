@@ -14,6 +14,15 @@ else:
     _B = "\033[1m"
 
 
+# House colors in alphabetical order (Gryffindor, Hufflepuff, Ravenclaw, Slytherin)
+HOUSE_COLORS = [
+    "#e74c3c",  # Gryffindor - Red
+    "#f39c12",  # Hufflepuff - Gold/Yellow
+    "#3498db",  # Ravenclaw - Blue
+    "#27ae60",  # Slytherin - Green
+]
+
+
 def load_csv_or_exit(parser, csv_path: str) -> pandas.DataFrame:
     try:
         return pandas.read_csv(csv_path)
@@ -52,6 +61,11 @@ def extract_houses_and_subjects_or_exit(
         )
 
     return houses, subject_columns
+
+
+def get_house_color_map(houses: list[str]) -> dict[str, str]:
+    """Create a mapping from house names to their colors."""
+    return {house: HOUSE_COLORS[index] for index, house in enumerate(houses)}
 
 
 def save_plot(fig, file_name: str, output_dir: str = "visualizations", dpi: int = 150) -> str:

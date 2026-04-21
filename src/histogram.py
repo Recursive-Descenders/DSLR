@@ -10,6 +10,7 @@ from utils import (
     _G,
     _R,
     extract_houses_and_subjects_or_exit,
+    get_house_color_map,
     load_csv_or_exit,
     save_plot,
 )
@@ -34,12 +35,14 @@ def main() -> None:
     fig, axes = plt.subplots(rows, columns, figsize=(18, 3.8 * rows))
     axes = axes.flatten()
 
+    house_to_color = get_house_color_map(houses)
+
     for index, subject in enumerate(subject_columns):
         axis = axes[index]
         for house in houses:
             values = df.loc[df["Hogwarts House"] == house, subject].dropna()
             if not values.empty:
-                axis.hist(values, bins=20, alpha=0.4, label=house)
+                axis.hist(values, bins=20, alpha=0.4, label=house, color=house_to_color[house])
         axis.set_title(subject, fontsize=10)
         axis.tick_params(labelsize=8)
 
