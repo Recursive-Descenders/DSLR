@@ -1,17 +1,14 @@
-import argparse, math, pandas, sys
+import argparse
+import math
+import sys
+
+import pandas
 
 
-STAT_ORDER = [
-    "count",
+BASE_STAT_ORDER = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
+BONUS_STAT_ORDER = [
     "missing_count",
     "missing_pct",
-    "mean",
-    "std",
-    "min",
-    "25%",
-    "50%",
-    "75%",
-    "max",
     "variance",
     "range",
     "iqr",
@@ -35,17 +32,16 @@ def percentile(sorted_values: list[float], quantile: float) -> float:
     return lower_value + (upper_value - lower_value) * fraction
 
 
-def describe_column(column: pandas.Series) -> dict[str, float]:
+def describe_column(column: pandas.Series, include_bonus: bool) -> dict[str, float]:
     total_count = len(column)
     values = [float(value) for value in column if not pandas.isna(value)]
     count = len(values)
     missing_count = total_count - count
     missing_pct = (missing_count / total_count * 100.0) if total_count > 0 else float("nan")
+
     if count == 0:
-        return {
+        result = {
             "count": 0.0,
-            "missing_count": float(missing_count),
-            "missing_pct": missing_pct,
             "mean": float("nan"),
             "std": float("nan"),
             "min": float("nan"),
@@ -53,17 +49,25 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
             "50%": float("nan"),
             "75%": float("nan"),
             "max": float("nan"),
-            "variance": float("nan"),
-            "range": float("nan"),
-            "iqr": float("nan"),
-            "outliers_iqr_count": 0.0,
         }
+        if include_bonus:
+            result.update(
+                {
+                    "missing_count": float(missing_count),
+                    "missing_pct": missing_pct,
+                    "variance": float("nan"),
+                    "range": float("nan"),
+                    "iqr": float("nan"),
+                    "outliers_iqr_count": 0.0,
+                }
+            )
+        return result
 
     values.sort()
     total = sum(values)
     mean = total / count
     squared_diffs = sum((value - mean) ** 2 for value in values)
-    var = squared_diffs / (count - 1) if count > 1 else float("nan")    # bonus: sample variance
+    var = squared_diffs / (count - 1) if count > 1 else float("nan")
     std = math.sqrt(var) if count > 1 else float("nan")
 
     q1 = percentile(values, 0.25)
@@ -76,10 +80,8 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
         sum(1 for value in values if value < lower_bound or value > upper_bound)
     )
 
-    return {
+    result = {
         "count": float(count),
-        "missing_count": float(missing_count),
-        "missing_pct": missing_pct,
         "mean": mean,
         "std": std,
         "min": values[0],
@@ -87,20 +89,49 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
         "50%": q2,
         "75%": q3,
         "max": values[-1],
-        "variance": var,
-        "range": values[-1] - values[0],
-        "iqr": iqr,
-        "outliers_iqr_count": outliers_iqr_count,
     }
+    if include_bonus:
+        result.update(
+            {
+                "missing_count": float(missing_count),
+                "missing_pct": missing_pct,
+                "variance": var,
+                "range": values[-1] - values[0],
+                "iqr": iqr,
+                "outliers_iqr_count": outliers_iqr_count,
+            }
+        )
+    return result
 
 
-def describe_dataframe(df: pandas.DataFrame) -> pandas.DataFrame:
+def describe_dataframe(df: pandas.DataFrame, include_bonus: bool) -> pandas.DataFrame:
+    stat_order = BASE_STAT_ORDER + BONUS_STAT_ORDER if include_bonus else BASE_STAT_ORDER
     df = df.drop(columns=["Index"], errors="ignore")
     description = {
-        column_name: describe_column(df[column_name])
+        column_name: describe_column(df[column_name], include_bonus)
         for column_name in df.columns
     }
-    return pandas.DataFrame(description).reindex(STAT_ORDER)
+    return pandas.DataFrame(description).reindex(stat_order)
+
+
+def print_description_table(table: pandas.DataFrame, full: bool) -> None:
+    if full:
+        with pandas.option_context(
+            "display.max_columns",
+            None,
+            "display.width",
+            0,
+        ):
+            print(table)
+        return
+
+    with pandas.option_context(
+        "display.max_columns",
+        8,
+        "display.width",
+        120,
+    ):
+        print(table)
 
 
 def main() -> None:
@@ -110,7 +141,17 @@ def main() -> None:
         "--csv",
         type=str,
         default="dataset_train.csv",
-        help="Path to CSV"
+        help="Path to CSV",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Show all subject columns without truncation.",
+    )
+    parser.add_argument(
+        "--bonus",
+        action="store_true",
+        help="Include bonus statistics (missing, variance, range, iqr, outlier count).",
     )
     args = parser.parse_args(sys.argv[1:])
 
@@ -123,7 +164,8 @@ def main() -> None:
         parser.exit(1, f"error: failed to parse CSV '{args.csv}': {error}\n")
     except OSError as error:
         parser.exit(1, f"error: failed to read CSV '{args.csv}': {error}\n")
-    print(describe_dataframe(df))
+    description = describe_dataframe(df, include_bonus=args.bonus)
+    print_description_table(description, full=args.full)
 
 
 if __name__ == "__main__":
