@@ -11,6 +11,7 @@ from utils import (
     _G,
     _R,
     extract_houses_and_subjects_or_exit,
+    get_house_color_map,
     load_csv_or_exit,
     save_plot,
 )
@@ -42,6 +43,8 @@ def main() -> None:
     rows = math.ceil(plots_per_page / columns)
     page_count = math.ceil(len(pairs) / plots_per_page)
 
+    house_to_color = get_house_color_map(houses)
+
     for page_index in range(page_count):
         start = page_index * plots_per_page
         end = start + plots_per_page
@@ -61,6 +64,7 @@ def main() -> None:
                         alpha=0.55,
                         s=10,
                         label=house,
+                        c=house_to_color[house],
                     )
 
             axis.set_title(f"{x_subject} vs {y_subject}", fontsize=10)

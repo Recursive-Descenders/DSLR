@@ -10,14 +10,10 @@ from utils import (
     _G,
     _R,
     extract_houses_and_subjects_or_exit,
+    get_house_color_map,
     load_csv_or_exit,
     save_plot,
 )
-
-
-def build_house_color_map(houses: list[str]) -> dict[str, str]:
-    palette = ["#d62728", "#2ca02c", "#1f77b4", "#ff7f0e"]
-    return {house: palette[index] for index, house in enumerate(houses)}
 
 
 def plot_diagonal_histogram(axis, df, houses: list[str], subject: str, house_to_color: dict[str, str]) -> None:
@@ -85,7 +81,7 @@ def create_house_legend_handles(houses: list[str], house_to_color: dict[str, str
 
 
 def create_pair_plot_figure(df, houses: list[str], subject_columns: list[str]):
-    house_to_color = build_house_color_map(houses)
+    house_to_color = get_house_color_map(houses)
     subject_count = len(subject_columns)
     cell_size = 2.3
 
