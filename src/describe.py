@@ -1,7 +1,7 @@
 import argparse, math, pandas, sys
 
 
-STAT_ORDER = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
+STAT_ORDER = ["count", "mean", "std", "min", "25%", "50%", "75%", "max", "variance", "range"]
 
 
 def percentile(sorted_values: list[float], quantile: float) -> float:
@@ -33,13 +33,18 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
             "50%": float("nan"),
             "75%": float("nan"),
             "max": float("nan"),
+            "variance": float("nan"),
+            "range": float("nan"),
         }
 
     values.sort()
     total = sum(values)
     mean = total / count
     squared_diffs = sum((value - mean) ** 2 for value in values)
-    std = math.sqrt(squared_diffs / (count - 1)) if count > 1 else float("nan")
+    var = squared_diffs / (count - 1) if count > 1 else float("nan")    # bonus: sample variance
+    std = math.sqrt(var) if count > 1 else float("nan")
+
+    # bonus:
 
     return {
         "count": float(count),
@@ -50,6 +55,8 @@ def describe_column(column: pandas.Series) -> dict[str, float]:
         "50%": percentile(values, 0.50),
         "75%": percentile(values, 0.75),
         "max": values[-1],
+        "variance": var,
+        "range": values[-1] - values[0],
     }
 
 
