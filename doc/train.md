@@ -26,21 +26,41 @@
 
 Implementation lives in `src/logreg_train.py` (NumPy only—no scikit-learn for fitting).
 
-**Multiclass (one-vs-all):** There are four **independent** binary logistic models—one per house. For house $h$, the label is $1$ if the student belongs to $h$ and $0$ otherwise. Training fits each model on the **same** preprocessed feature matrix; weights are **not** shared across houses.
+**Multiclass (one-vs-all):** There are four **independent** binary classifiers—one per house. For that house, $y^i \in \{0,1\}$ is the label of example $i$ (member vs not). All four models use the **same** preprocessed examples $x^i$; the parameter vectors $\theta$ are **not** shared.
 
-**Binary model:** With bias absorbed into $\theta$, the design row is $\tilde{x} = [1, x]$. Predicted probability is $\sigma(z)$ with $z = \tilde{x}^\top \theta$ and $\sigma(z) = 1 / (1 + e^{-z})$. Before applying $\sigma$, $z$ is **clipped** to $[-500, 500]$ so exponentials stay finite.
-
-**Loss:** Each binary model minimizes the **mean binary cross-entropy** over its $y \in \{0,1\}$ targets. Probabilities fed into the log are clamped to $(10^{-15}, 1 - 10^{-15})$ for numerical stability.
-
-**Optimization:** **Gradient descent** on $\theta$ with learning rate $\alpha$ (CLI: `--lr`). Each **epoch**, training rows are **permuted**; the epoch is a pass of **minibatches** (or one full batch). For a batch with design matrix $X_b$ and labels $y_b$, with predictions $h = \sigma(X_b \theta)$,
+**Binary hypothesis (subject-style):** The design vector $x$ includes a constant 1 for the intercept. With $g$ the sigmoid,
 
 $$
-\nabla \propto \frac{1}{|b|} X_b^\top (h - y_b), \quad \theta \leftarrow \theta - \alpha \nabla .
+h_\theta(x) = g(\theta^\top x), \qquad g(z) = \frac{1}{1 + e^{-z}}.
 $$
 
-- **`gd`:** one batch = all $m$ examples (full-batch gradient descent).
-- **`mbgd`:** minibatches of size `--batch-size` (default ~25% of $m$ when omitted).
-- **`sgd`:** batch size $1$.
+In code, $z = \theta^\top x$ is **clipped** to $[-500, 500]$ before $g$ so the exponential stays numerically safe.
+
+**Cost $J(\theta)$ (mean log loss over $m$ training examples, same form as the course notes):**
+
+$$
+J(\theta) = -\frac{1}{m} \sum_{i=1}^{m} \left[ y^i \log\bigl(h_\theta(x^i)\bigr) + (1 - y^i) \log\bigl(1 - h_\theta(x^i)\bigr) \right].
+$$
+
+**Partial derivatives of $J$ (one component $j$ per feature / bias):**
+
+$$
+\frac{\partial}{\partial \theta_j} J(\theta) = \frac{1}{m} \sum_{i=1}^{m} \bigl(h_\theta(x^i) - y^i\bigr) \, x_j^i .
+$$
+
+**Vector / batch form (what the implementation uses):** Stacking rows $x^i$ into $X$, and writing $h$ and $y$ for the column vectors with entries $h_\theta(x^i)$ and $y^i$,
+
+$$
+\nabla_\theta J = \frac{1}{m} X^\top (h - y), \qquad \theta \leftarrow \theta - \alpha \nabla_\theta J .
+$$
+
+For a **minibatch** of size $|b|$, the same pattern applies: use $X_b$, the matching $h$ and $y$, and divide by $|b|$ instead of $m$. Log terms in the definition of $J$ are **clipped** in code to avoid $\log(0)$; the gradient still has the same $(h - y) \cdot x$ structure as above.
+
+**Batching in this repo:**
+
+- **`gd`:** one batch = all $m$ training examples (so $\nabla_\theta J$ uses the full $X$ and full $h - y$ each step within an epoch).
+- **`mbgd`:** several minibatches per epoch; $|b| =$ `--batch-size` (default ~25% of $m$ if omitted).
+- **`sgd`:** $|b| = 1$.
 
 **Initialization:** $\theta$ is drawn from a small Gaussian (`randn` scaled by `0.01`).
 
