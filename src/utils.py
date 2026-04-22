@@ -23,7 +23,7 @@ HOUSE_COLORS = [
 ]
 
 
-def load_csv_or_exit(parser, csv_path: str, only_numeric: bool = True) -> pandas.DataFrame:
+def load_csv_or_exit(parser, csv_path: str, only_numeric: bool = False) -> pandas.DataFrame:
     try:
         df = pandas.read_csv(csv_path)
         if only_numeric:
