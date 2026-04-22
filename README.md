@@ -1,57 +1,58 @@
 # DSLR — Data Science × Logistic Regression
 
-Hogwarts Sorting Hat replacement: explore the student dataset, then train a one-vs-all logistic regression to predict houses.
+A small Hogwarts-themed data-science exercise: explore the student dataset, visualize it, then train a **one-vs-all** logistic regression (implemented with NumPy—no scikit-learn for the core model) to predict houses.
 
-Full brief (requirements, forbidden helpers, output formats): **`en.subject.txt`** in this repo.
+## Warning for 42 Students
 
----
+This repository is intended as a reference and educational tool. 42 students are strongly advised not to copy this code without fully understanding its functionality. Plagiarism in any form is against 42's principles and could lead to serious academic consequences. Use this repository responsibly to learn and better understand how to implement similar functionalities on your own.
 
-## Who does what
+## Credits
 
-| Part | Topic | Status |
-|------|--------|--------|
-| **V.1** | Data analysis — `describe.[ext]` prints stats for all **numeric** columns (count, mean, std, min, quartiles, max) **without** using built-in `mean`/`std`/percentile/`describe`-style shortcuts | **Your job** |
-| **V.2** | Visualization — `histogram`, `scatter_plot`, `pair_plot` scripts answering the subject’s questions | **Your job** |
-| **V.3** | Logistic regression — `logreg_train` + `logreg_predict`, gradient descent, weights file + `houses.csv` predictions | **In progress here** (train/predict logic exists under `src/`, naming and polish may still need to match the subject) |
+- **Data analysis and exploration** — [ChimPansky](https://github.com/ChimPansky)
+- **Training, inference, and evaluation** — [Mohamad Zolfaghari Pour](https://github.com/zolfagharipour)
+## Setup
 
----
+Requires **Python 3.11+**.
 
-## What’s already here (V.3 WIP)
-
-- `src/train.py` — trains on `dataset_train.csv`, writes weights to `model/model.json`. Still needs a full **one-vs-all** setup for all four houses and CLI args like the subject asks.
-- `src/predict.py` — loads the model and scores rows; wire it to **`houses.csv`** and multi-class picks when training is complete.
-- `Makefile` — `make setup` (venv + deps), `make train`, `make predict`. There is an `evaluate` target pointing at `src/evaluate.py`, but that file is not in the repo yet.
-
-Subject expects executable names like **`logreg_train`** / **`logreg_predict`** and a prediction file **`houses.csv`** with header `Index,Hogwarts House`. Align naming and outputs with `en.subject.txt` before defense.
-
----
-
-## What we expect from you (V.1 & V.2)
-
-1. **`describe`** — CLI takes a CSV path; output format should match the subject example for numeric features only; implement stats yourself (no cheating shortcuts per subject).
-2. **`histogram`** — which course has the most homogeneous scores across the four houses?
-3. **`scatter_plot`** — which two features look most similar?
-4. **`pair_plot`** — feature matrix / scatter matrix; use it to justify which features you’ll feed into logistic regression.
-
-Use Python or whatever the team agrees on; keep plotting/stat code honest per Chapter IV.
-
----
-
-## Quick start
+Install **`uv`** (see the [uv install guide](https://docs.astral.sh/uv/getting-started/installation/), or e.g. `pipx install uv`). From the repository root:
 
 ```bash
-make setup          # creates .venv and installs requirements
-make train          # uses dataset_train.csv (path is hardcoded in train.py for now)
-make predict        # runs predict.py; for test data: python src/predict.py dataset_test.csv
+uv sync
 ```
 
-Data: `dataset_train.csv`, `dataset_test.csv` in the project root.
+Run tools with `uv run <command>` or activate `.venv` (`source .venv/bin/activate` on Unix) and use the same names.
 
----
+**Console scripts:** `describe`, `histogram`, `scatter_plot`, `pair_plot`, `train`, `predict`, `confusion`. Use `-h` / `--help` where supported.
 
-## Defense notes (everyone)
+**Outputs:** `model/model.json` after training; figures under `visualizations/`. Sample data: `dataset_train.csv`, `dataset_test.csv`, `dataset_truth.csv` (labels for evaluation).
 
-- Peer eval checks predictions on `dataset_test.csv` with **sklearn accuracy ≥ 98%** on houses.
-- Bonus only counts if the mandatory part is complete and solid — see subject.
+## Typical flow
 
-If something’s unclear, read **`en.subject.txt`** first; it’s the source of truth.
+| Step | Command (after `uv sync`) | Details |
+|------|---------------------------|---------|
+| Summarize | `uv run describe [--csv PATH] [--full] [--bonus]` | [doc/describe.md](doc/describe.md) — stats, NaN rules, `--bonus` rows |
+| Plot | `uv run histogram` / `scatter_plot` / `pair_plot` each `[--csv PATH]` | [doc/visualizations.md](doc/visualizations.md) — shared CSV contract, filenames |
+| Train | `uv run train [PATH]` — `--optimizer {gd,mbgd,sgd}`, `--lr`, `--epochs`, `--batch-size` (MBGD only), `--plot-loss` | [doc/train.md](doc/train.md) — features, preprocessing, **algorithm**, artifacts |
+| Predict | `uv run predict [dataset_test.csv] [model/model.json]` | [doc/predict.md](doc/predict.md) — writes `houses.csv` |
+| Evaluate | See [Confusion matrix](#confusion-matrix) | Compare predictions to a labeled CSV |
+
+Default CSV for exploration commands is `dataset_train.csv` where not shown.
+
+## Confusion matrix
+
+With `houses.csv` from `predict` and a ground-truth file using the same `Index,Hogwarts House` columns (e.g. `dataset_truth.csv`):
+
+```bash
+uv run confusion dataset_truth.csv houses.csv
+```
+
+Writes `visualizations/confusion_matrix.png` (true vs predicted counts, fixed house order).
+
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [doc/describe.md](doc/describe.md) | CLI, numeric-only columns, statistic definitions (base + `--bonus`), NaN handling, display modes |
+| [doc/visualizations.md](doc/visualizations.md) | `histogram`, `scatter_plot`, `pair_plot`; shared loader rules; DPI and output names; pointers to loss and confusion figures |
+| [doc/train.md](doc/train.md) | Loader and features (aligned with predict), preprocessing, **one-vs-all logistic regression** (loss, gradients, optimizers), `model.json`, `--plot-loss` |
+| [doc/predict.md](doc/predict.md) | Model file requirements, test CSV rules, argmax decoding, `houses.csv` contract |
