@@ -4,6 +4,7 @@ import sys
 
 import pandas
 
+from utils import load_csv_or_exit
 
 BASE_STAT_ORDER = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
 BONUS_STAT_ORDER = [
@@ -182,15 +183,8 @@ def main() -> None:
     )
     args = parser.parse_args(sys.argv[1:])
 
-    # We only care about numeric columns, no name, birthday, etc...
-    try:
-        df = pandas.read_csv(args.csv).select_dtypes(include="number")
-    except FileNotFoundError:
-        parser.exit(1, f"error: CSV file not found: {args.csv}\n")
-    except pandas.errors.ParserError as error:
-        parser.exit(1, f"error: failed to parse CSV '{args.csv}': {error}\n")
-    except OSError as error:
-        parser.exit(1, f"error: failed to read CSV '{args.csv}': {error}\n")
+    df = load_csv_or_exit(parser, args.csv, only_numeric=True)
+
     description = describe_dataframe(df, include_bonus=args.bonus)
     print_description_table(description, full=args.full)
 

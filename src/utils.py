@@ -23,14 +23,17 @@ HOUSE_COLORS = [
 ]
 
 
-def load_csv_or_exit(parser, csv_path: str) -> pandas.DataFrame:
+def load_csv_or_exit(parser, csv_path: str, only_numeric: bool = True) -> pandas.DataFrame:
     try:
-        return pandas.read_csv(csv_path)
+        df = pandas.read_csv(csv_path)
+        if only_numeric:
+            df = df.select_dtypes(include="number")
+        return df
     except FileNotFoundError:
         parser.exit(1, f"error: CSV file not found: {csv_path}\n")
     except pandas.errors.ParserError as error:
         parser.exit(1, f"error: failed to parse CSV '{csv_path}': {error}\n")
-    except OSError as error:
+    except Exception as error:
         parser.exit(1, f"error: failed to read CSV '{csv_path}': {error}\n")
 
 
