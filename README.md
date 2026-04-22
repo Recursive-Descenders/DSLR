@@ -8,9 +8,8 @@ This repository is intended as a reference and educational tool. 42 students are
 
 ## Credits
 
-- **Data analysis and exploration** — [ChimPansky](https://github.com/ChimPansky): `describe`, `histogram`, `scatter_plot`, `pair_plot`.
-- **Training, inference, and evaluation** — [Mohamad Zolfaghari Pour](https://github.com/zolfagharipour): `train` (`logreg_train`), `predict` (`logreg_predict`), `confusion`.
-
+- **Data analysis and exploration** — [ChimPansky](https://github.com/ChimPansky)
+- **Training, inference, and evaluation** — [Mohamad Zolfaghari Pour](https://github.com/zolfagharipour)
 ## Setup
 
 Requires **Python 3.11+**.

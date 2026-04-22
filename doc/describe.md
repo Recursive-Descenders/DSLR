@@ -1,6 +1,6 @@
 # `describe` — behavior and data contract
 
-Summarizes **numeric** columns of a CSV in a table: **rows** are statistic names, **columns** are feature names (same layout as a typical `DataFrame.describe`-style view). Implementation: [`src/describe.py`](../src/describe.py).
+Summarizes **numeric** columns of a CSV in a table: **rows** are statistic names, **columns** are feature names (same layout as a typical `DataFrame.describe`-style view). 
 
 ## CLI
 
@@ -63,7 +63,3 @@ If a column has **no** non-`NaN` values, base stats are mostly `nan` / `count` 0
 
 - Without **`--full`**, printing uses a **compact** layout (narrower width and a limited number of columns) so wide tables fit a terminal; with **`--full`**, pandas shows **all** columns.
 
-## Non-numeric values (summary)
-
-- Only numeric columns participate; there are **no** extra type checks beyond pandas’ numeric dtype filter.
-- **`NaN` is excluded** from all aggregations except that **`count`** only counts present values, and bonus **`missing_*`** tracks absence explicitly.

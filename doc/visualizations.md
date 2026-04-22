@@ -1,12 +1,12 @@
 # Visualizations — exploration plots
 
-Three entry points build **matplotlib** figures from a **training-style** CSV (house labels + numeric course columns). They share helpers in [`src/utils.py`](../src/utils.py): load CSV, validate houses and subjects, assign colors, and save under **`visualizations/`** (created if missing).
+Three entry points build **matplotlib** figures from a **training-style** CSV (house labels + numeric course columns).
 
-| Script | Console command | Output file(s) |
-|--------|-----------------|----------------|
-| [`histogram.py`](../src/histogram.py) | `histogram` | `visualizations/histograms_by_house.png` |
-| [`scatter_plot.py`](../src/scatter_plot.py) | `scatter_plot` | `visualizations/scatter_pairs_page_01.png`, `…_02.png`, … |
-| [`pair_plot.py`](../src/pair_plot.py) | `pair_plot` | `visualizations/pair_plot_matrix.png` |
+|Console command | Output file(s) |
+|-----------------|----------------|
+| `histogram` | `visualizations/histograms_by_house.png` |
+| `scatter_plot` | `visualizations/scatter_pairs_page_01.png`, `…_02.png`, … |
+| `pair_plot` | `visualizations/pair_plot_matrix.png` |
 
 Common CLI:
 
@@ -25,7 +25,7 @@ All three scripts:
 3. Derive **houses** as `sorted` unique non-null house names — there must be **1–4** houses.
 4. **Subject columns** = numeric dtypes from the frame, **excluding** a column named **`Index`** if present. There must be **1–13** such columns (enforced for the Hogwarts dataset shape).
 
-**Colors:** [`HOUSE_COLORS`](../src/utils.py) in `utils.py` maps the **i-th** sorted house to the **i-th** color (Gryffindor → red, Hufflepuff → gold, Ravenclaw → blue, Slytherin → green for the default four).
+**Colors:** `HOUSE_COLORS` in `utils.py` maps the **i-th** sorted house to the **i-th** color (Gryffindor → red, Hufflepuff → gold, Ravenclaw → blue, Slytherin → green for the default four).
 
 **Missing values:** Per plot, rows with **`NaN`** in the relevant subject(s) are dropped (`.dropna()`); they are not imputed.
 
